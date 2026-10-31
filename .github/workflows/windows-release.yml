@@ -1,0 +1,54 @@
+name: Windows executable release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install runtime and packaging dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pandas scikit-learn joblib xgboost pyinstaller
+
+      - name: Build executable
+        run: >-
+          pyinstaller --clean --noconfirm --onefile
+          --name BeyondBinary
+          --collect-all xgboost
+          --collect-all sklearn
+          --hidden-import beyondbinary.ml.correlate_events
+          --hidden-import beyondbinary.ml.score_events
+          --hidden-import pandas
+          --hidden-import joblib
+          -m beyondbinary.ml.pipeline
+
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BeyondBinary-Windows-x64
+          path: dist/BeyondBinary.exe
+          if-no-files-found: error
+
+      - name: Publish release asset for version tags
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/BeyondBinary.exe
+          generate_release_notes: true
