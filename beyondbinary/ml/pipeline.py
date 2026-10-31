@@ -10,7 +10,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from beyondbinary.ml.correlate_events import correlate_events
+from beyondbinary.ml.correlate_events import (
+    SRC_COLUMNS,
+    TIME_COLUMNS,
+    correlate_events,
+)
 from beyondbinary.ml.score_events import score_events
 
 
@@ -49,6 +53,13 @@ def main() -> None:
     parser.add_argument("--min-events", type=int, default=2)
     args = parser.parse_args()
 
+    # Inspect the source headers separately so the CLI can explain why
+    # correlation is unavailable without changing the model feature schema.
+    headers = pd.read_csv(args.input, nrows=0).columns
+    normalized_headers = {str(column).strip().casefold() for column in headers}
+    has_source = any(column.casefold() in normalized_headers for column in SRC_COLUMNS)
+    has_time = any(column.casefold() in normalized_headers for column in TIME_COLUMNS)
+
     queue = run_pipeline(
         input_csv=args.input,
         model_path=args.model,
@@ -65,6 +76,17 @@ def main() -> None:
         f"Processed {len(queue):,} flows; {int(suspicious):,} require review; "
         f"{incidents:,} correlated incidents."
     )
+    if not has_source or not has_time:
+        missing = []
+        if not has_source:
+            missing.append("source IP")
+        if not has_time:
+            missing.append("timestamp")
+        print(
+            "Correlation limitation: input is missing "
+            + " and ".join(missing)
+            + ". Provide a flow export with these fields to enable incident grouping."
+        )
     print(f"Incident queue written to {target}")
 
 
