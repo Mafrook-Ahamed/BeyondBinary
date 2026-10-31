@@ -31,11 +31,21 @@ class CorrelateEventsTests(unittest.TestCase):
         result = correlate_events(frame, window_minutes=5)
         self.assertTrue(result["incident_id"].eq("").all())
 
+    def test_strips_whitespace_from_csv_headers(self):
+        frame = pd.DataFrame({
+            " Source IP ": ["10.0.0.1", "10.0.0.1"],
+            " Timestamp ": ["2020-01-01 10:00:00", "2020-01-01 10:01:00"],
+            " predicted_label ": ["DDoS", "DDoS"],
+        })
+        result = correlate_events(frame)
+        self.assertEqual(result.loc[0, "incident_id"], result.loc[1, "incident_id"])
+
     def test_missing_context_keeps_suspicious_rows_unassigned(self):
         frame = pd.DataFrame({"predicted_label": ["DDoS"]})
         result = correlate_events(frame)
         self.assertEqual(result.loc[0, "incident_id"], "")
-        self.assertIn("unavailable", result.loc[0, "correlation_reason"])
+        self.assertIn("source IP", result.loc[0, "correlation_reason"])
+        self.assertIn("timestamp", result.loc[0, "correlation_reason"])
 
 
 if __name__ == "__main__":
