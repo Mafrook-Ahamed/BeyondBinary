@@ -26,9 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pandas scikit-learn joblib xgboost pyinstaller
 
-      - name: Build executable
+      - name: Build desktop executable
         run: >-
-          pyinstaller --clean --noconfirm --onefile
+          pyinstaller --clean --noconfirm --onefile --windowed
           --name BeyondBinary
           --collect-all xgboost
           --collect-all sklearn
@@ -36,7 +36,7 @@ jobs:
           --hidden-import beyondbinary.ml.score_events
           --hidden-import pandas
           --hidden-import joblib
-          beyondbinary/release_entry.py
+          beyondbinary/desktop_app.py
 
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
