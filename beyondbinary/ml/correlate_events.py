@@ -35,6 +35,8 @@ def correlate_events(
         raise ValueError("min_events must be >= 1")
 
     data = frame.copy().reset_index(drop=True)
+    # CICFlowMeter exports often include leading/trailing spaces in headers.
+    data.columns = [str(column).strip() for column in data.columns]
     data["event_id"] = data.get("event_id", pd.Series(range(1, len(data) + 1))).astype(str)
 
     time_col = find_column(data, TIME_COLUMNS)
@@ -55,8 +57,15 @@ def correlate_events(
 
     # Without both source and timestamp, avoid inventing relationships.
     if not src_col or not time_col:
+        missing = []
+        if not src_col:
+            missing.append("source IP")
+        if not time_col:
+            missing.append("timestamp")
         data.loc[suspicious, "correlation_reason"] = (
-            "suspicious event; source IP or timestamp unavailable"
+            "suspicious event; correlation unavailable because "
+            + " and ".join(missing)
+            + " field(s) are missing from input"
         )
         return data
 
