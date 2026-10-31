@@ -37,7 +37,7 @@ jobs:
           --hidden-import beyondbinary.ml.score_events
           --hidden-import pandas
           --hidden-import joblib
-          -m beyondbinary.ml.pipeline
+          beyondbinary/release_entry.py
 
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
