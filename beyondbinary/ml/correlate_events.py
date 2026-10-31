@@ -20,7 +20,13 @@ PROB_COLUMNS = ("prediction_probability", "probability", "confidence")
 
 
 def find_column(frame: pd.DataFrame, candidates: tuple[str, ...]) -> str | None:
-    return next((name for name in candidates if name in frame.columns), None)
+    """Find a candidate header ignoring case and surrounding whitespace."""
+    by_normalized_name = {str(name).strip().casefold(): name for name in frame.columns}
+    return next(
+        (by_normalized_name[name.strip().casefold()] for name in candidates
+         if name.strip().casefold() in by_normalized_name),
+        None,
+    )
 
 
 def correlate_events(
@@ -35,7 +41,6 @@ def correlate_events(
         raise ValueError("min_events must be >= 1")
 
     data = frame.copy().reset_index(drop=True)
-    # CICFlowMeter exports often include leading/trailing spaces in headers.
     data.columns = [str(column).strip() for column in data.columns]
     data["event_id"] = data.get("event_id", pd.Series(range(1, len(data) + 1))).astype(str)
 
@@ -54,8 +59,6 @@ def correlate_events(
 
     data["incident_id"] = ""
     data["correlation_reason"] = "insufficient fields for correlation"
-
-    # Without both source and timestamp, avoid inventing relationships.
     if not src_col or not time_col:
         missing = []
         if not src_col:
@@ -72,7 +75,6 @@ def correlate_events(
     data["_time"] = pd.to_datetime(data[time_col], errors="coerce")
     data["_source"] = data[src_col].astype(str)
     data["_destination"] = data[dst_col].astype(str) if dst_col else ""
-
     suspicious_rows = data.loc[suspicious & data["_time"].notna()].copy()
     window = pd.Timedelta(minutes=window_minutes)
     incident_number = 0
@@ -83,7 +85,7 @@ def correlate_events(
         cluster_start = None
         previous_time = None
 
-        def assign_cluster(indices: list[int], start_time: pd.Timestamp) -> None:
+        def assign_cluster(indices: list[int]) -> None:
             nonlocal incident_number
             if len(indices) < min_events:
                 return
@@ -101,14 +103,13 @@ def correlate_events(
                     cluster_start = current_time
                 cluster.append(idx)
             else:
-                assign_cluster(cluster, cluster_start)
+                assign_cluster(cluster)
                 cluster = [idx]
                 cluster_start = current_time
             previous_time = current_time
         if cluster:
-            assign_cluster(cluster, cluster_start)
+            assign_cluster(cluster)
 
-    # Keep suspicious singleton/unassigned rows visible for analyst review.
     still_unassigned = suspicious & data["incident_id"].eq("")
     data.loc[still_unassigned, "correlation_reason"] = (
         "suspicious event; no multi-event source/time cluster formed"
