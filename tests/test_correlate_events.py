@@ -40,6 +40,16 @@ class CorrelateEventsTests(unittest.TestCase):
         result = correlate_events(frame)
         self.assertEqual(result.loc[0, "incident_id"], result.loc[1, "incident_id"])
 
+    def test_matches_metadata_headers_case_insensitively(self):
+        frame = pd.DataFrame({
+            "source ip": ["10.0.0.1", "10.0.0.1"],
+            "TIMESTAMP": ["2020-01-01 10:00:00", "2020-01-01 10:01:00"],
+            "PREDICTED_LABEL": ["DDoS", "DDoS"],
+        })
+        result = correlate_events(frame)
+        self.assertEqual(result.loc[0, "incident_id"], result.loc[1, "incident_id"])
+        self.assertTrue(result.loc[0, "incident_id"])
+
     def test_missing_context_keeps_suspicious_rows_unassigned(self):
         frame = pd.DataFrame({"predicted_label": ["DDoS"]})
         result = correlate_events(frame)
