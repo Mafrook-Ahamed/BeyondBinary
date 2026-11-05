@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BeyondBinary | SOC Triage</title><link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header><div class="brand"><span class="mark">BB</span><div><h1>BeyondBinary</h1><p>LOCAL SOC TRIAGE</p></div></div><span class="status"><i></i> Local processing</span></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">SECURITY OPERATIONS</p><h2>Turn event volume into<br><em>analyst priorities.</em></h2><p class="sub">Import a flow CSV, run local detection and review the highest-priority events.</p></div><div class="shield">◈</div></section>
+    <section class="panel import"><div class="panel-title"><div><span class="step">01</span><h3>Import flow data</h3></div><span class="muted">CSV only</span></div>
+      <form id="form"><label class="drop" for="csv"><span class="upload">↑</span><strong id="filename">Choose a CSV file</strong><small>Flow export · file stays on this machine</small><input id="csv" type="file" accept=".csv,text/csv" required></label>
+      <label class="model">Model path <input id="model" type="text" placeholder="Optional: local path to .joblib model"></label><button id="run" type="submit">Run analysis <span>→</span></button></form><p id="message" role="status"></p>
+    </section>
+    <section id="results" hidden><div class="panel-title"><div><span class="step">02</span><h3>Analysis overview</h3></div><button id="download" class="secondary">Export queue ↓</button></div><div class="metrics"><article><small>Flows processed</small><strong id="processed">—</strong></article><article><small>Require review</small><strong id="review">—</strong></article><article><small>Correlated incidents</small><strong id="incidents">—</strong></article></div><div class="panel table-panel"><div class="panel-title"><h3>Priority queue</h3><span class="muted">Top 100 rows</span></div><div class="table-wrap"><table><thead><tr><th>Priority</th><th>Event</th><th>Prediction</th><th>Score</th><th>Incident</th></tr></thead><tbody id="rows"></tbody></table></div></div><p class="disclaimer" id="note"></p></section>
+    <footer>BeyondBinary · Local-first analysis · Predictions require analyst review</footer>
+  </main><script src="/static/app.js"></script>
+</body></html>
